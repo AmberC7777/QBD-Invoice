@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using CsvHelper;
+using CsvHelper.Configuration;
 using QBFC16Lib;   // COM reference for QBFC16
 
 namespace QBD_Invoice
@@ -22,9 +23,9 @@ namespace QBD_Invoice
         public int LineNum { get; set; }
         public string ItemRef { get; set; } = string.Empty;
         public string Desc { get; set; } = string.Empty;
-        public decimal Quantity { get; set; }
-        public decimal Rate { get; set; }
-        public decimal Amount { get; set; }
+        public decimal? Quantity { get; set; }   // ← now nullable
+        public decimal? Rate { get; set; }   // ← now nullable
+        public decimal? Amount { get; set; }   // ← now nullable (if you ever need it)
     }
 
     class Program
@@ -40,19 +41,45 @@ namespace QBD_Invoice
 
         static List<InvoiceLine> ReadInvoiceLines(string path)
         {
-            using (var reader = new StreamReader(path))
-            using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
             {
+                MissingFieldFound = null,
+                HeaderValidated = null,
+            };
+
+            using (var reader = new StreamReader(path))
+            using (var csv = new CsvReader(reader, config))
+            {
+                // Treat empty strings as null for decimal?
+                csv.Context.TypeConverterOptionsCache
+                   .GetOptions<decimal?>()
+                   .NullValues.Add(string.Empty);
+
                 return csv.GetRecords<InvoiceLine>().ToList();
             }
         }
 
         static void Main(string[] args)
         {
-            var headers = ReadInvoiceHeaders("InvoiceHeader.csv");
-            var lines = ReadInvoiceLines("InvoiceLines.csv");
-
-            PushInvoicesToQuickBooks(headers, lines);
+            try
+            {
+                var headers = ReadInvoiceHeaders("InvoiceHeader.csv");
+                var lines = ReadInvoiceLines("InvoiceLines.csv");
+                PushInvoicesToQuickBooks(headers, lines);
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("Unhandled exception:");
+                Console.WriteLine(ex);
+                Console.ResetColor();
+            }
+            finally
+            {
+                Console.WriteLine();
+                Console.WriteLine("Execution complete. Press any key to exit...");
+                Console.ReadKey();
+            }
         }
 
         public static void PushInvoicesToQuickBooks(
@@ -62,11 +89,7 @@ namespace QBD_Invoice
             var sessionMgr = new QBSessionManager();
             try
             {
-                sessionMgr.OpenConnection2(
-                    "",
-                    "InvoiceImporter",
-                    ENConnectionType.ctLocalQBD
-                );
+                sessionMgr.OpenConnection2("", "InvoiceImporter", ENConnectionType.ctLocalQBD);
                 sessionMgr.BeginSession("", ENOpenMode.omDontCare);
 
                 var msgSet = sessionMgr.CreateMsgSetRequest("US", 16, 0);
@@ -94,8 +117,19 @@ namespace QBD_Invoice
                         if (!string.IsNullOrWhiteSpace(ln.Desc))
                             lineAdd.Desc.SetValue(ln.Desc);
 
-                        lineAdd.Quantity.SetValue((double)ln.Quantity);
-                        lineAdd.ORRatePriceLevel.Rate.SetValue((double)ln.Rate);
+                        // Only send Quantity if CSV cell had a value
+                        if (ln.Quantity.HasValue)
+                        {
+                            lineAdd.Quantity.SetValue((double)ln.Quantity.Value);
+                        }
+
+                        // Only send Rate if CSV cell had a value
+                        if (ln.Rate.HasValue)
+                        {
+                            lineAdd.ORRatePriceLevel.Rate.SetValue((double)ln.Rate.Value);
+                        }
+
+                        // (You can similarly handle Amount if you ever map it.)
                     }
                 }
 
