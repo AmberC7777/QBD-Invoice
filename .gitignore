@@ -1,3 +1,14 @@
+# Build output
+bin/
 obj/
+
+# Visual Studio files
 *.user
 *.suo
+.vs/
+
+# Other common temporary files
+*.log
+*.tmp
+*.cache
+
