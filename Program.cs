@@ -106,6 +106,9 @@ namespace QBD_Invoice
                     invRq.TxnDate.SetValue(hdr.TxnDate);
                     invRq.RefNumber.SetValue(hdr.RefNumber);
 
+                    // Ensure invoices are flagged to be printed in QuickBooks
+                    invRq.IsToBePrinted.SetValue(true);
+
                     foreach (var ln in lines.Where(l => l.InvoiceID == hdr.InvoiceID))
                     {
                         var lineAdd = invRq
