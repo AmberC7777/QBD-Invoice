@@ -23,9 +23,9 @@ namespace QBD_Invoice
         public int LineNum { get; set; }
         public string ItemRef { get; set; } = string.Empty;
         public string Desc { get; set; } = string.Empty;
-        public decimal? Quantity { get; set; }   // ← now nullable
-        public decimal? Rate { get; set; }   // ← now nullable
-        public decimal? Amount { get; set; }   // ← now nullable (if you ever need it)
+        public decimal? Quantity { get; set; }   // nullable
+        public decimal? Rate { get; set; }       // nullable
+        public decimal? Amount { get; set; }     // nullable
     }
 
     class Program
@@ -59,7 +59,7 @@ namespace QBD_Invoice
             }
         }
 
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
@@ -117,16 +117,29 @@ namespace QBD_Invoice
                         if (!string.IsNullOrWhiteSpace(ln.Desc))
                             lineAdd.Desc.SetValue(ln.Desc);
 
-                        // Only send Quantity if CSV cell had a value
-                        if (ln.Quantity.HasValue)
+                        // If this is your percent-based item ("OOP"), send Rate as PERCENTTYPE via RatePercent.
+                        // NOTE: PERCENTTYPE is expressed like "5" for 5% (not 0.05).
+                        bool isOop = string.Equals(ln.ItemRef, "OOP", StringComparison.OrdinalIgnoreCase);
+
+                        // Only send Quantity if CSV cell had a value AND the line is not a percent-based line.
+                        // (Percent discount-style lines typically do not use Quantity.)
+                        if (!isOop && ln.Quantity.HasValue)
                         {
                             lineAdd.Quantity.SetValue((double)ln.Quantity.Value);
                         }
 
-                        // Only send Rate if CSV cell had a value
+                        // Only send Rate/RatePercent if CSV cell had a value
                         if (ln.Rate.HasValue)
                         {
-                            lineAdd.ORRatePriceLevel.Rate.SetValue((double)ln.Rate.Value);
+                            if (isOop)
+                            {
+                                // <-- This is the key change: send as PERCENTTYPE
+                                lineAdd.ORRatePriceLevel.RatePercent.SetValue((double)ln.Rate.Value);
+                            }
+                            else
+                            {
+                                lineAdd.ORRatePriceLevel.Rate.SetValue((double)ln.Rate.Value);
+                            }
                         }
 
                         // (You can similarly handle Amount if you ever map it.)
