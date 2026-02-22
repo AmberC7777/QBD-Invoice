@@ -1,14 +1,31 @@
-# Build output
+## Build results
 bin/
 obj/
 
-# Visual Studio files
+## Visual Studio
+.vs/
 *.user
 *.suo
-.vs/
+*.userosscache
+*.sln.docstates
 
-# Other common temporary files
+## NuGet
+packages/
+*.nupkg
+*.snupkg
+
+## .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## Logs
 *.log
-*.tmp
-*.cache
 
+## OS files
+.DS_Store
+Thumbs.db
+
+## Rider / VS Code (optional)
+.idea/
+.vscode/
