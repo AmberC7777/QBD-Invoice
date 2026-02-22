@@ -46,7 +46,7 @@ Required columns (header row must match property names):
 ## Build and Run
 
 1. Restore NuGet packages.
-2. Build the project in Visual Studio (or with MSBuild) targeting **.NET Framework 4.7.2** and **x86** (Debug).
+2. Build the project in Visual Studio (or with MSBuild) targeting **.NET Framework 4.7.2** and **x86** (Debug/Release).
 3. Place `InvoiceHeader.csv` and `InvoiceLines.csv` next to the executable or run from the directory that contains them.
 4. Run the executable; it will push invoices to QuickBooks Desktop.
 
@@ -60,3 +60,6 @@ Required columns (header row must match property names):
 - Ensure QuickBooks Desktop is running and that the application is authorized in QuickBooks.
 - Verify that item and customer names match exactly what is in QuickBooks.
 - Confirm the QBFC16 SDK is installed and registered.
+- If you see `0x80040154 Class not registered`, the target machine is missing the QBFC COM registration. Install the QuickBooks Desktop SDK (QBFC16) and run the x86 build on a machine with QuickBooks Desktop installed.
+- A stack trace path like `C:\Users\...\Program.cs` is the build machine source path embedded in symbols; it does **not** mean your teammate's machine is trying to access your laptop.
+

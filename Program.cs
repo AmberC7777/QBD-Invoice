@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using CsvHelper;
 using CsvHelper.Configuration;
 using QBFC16Lib;   // COM reference for QBFC16
@@ -86,11 +87,28 @@ namespace QBD_Invoice
             List<InvoiceHeader> headers,
             List<InvoiceLine> lines)
         {
-            var sessionMgr = new QBSessionManager();
+            QBSessionManager sessionMgr;
+            try
+            {
+                sessionMgr = new QBSessionManager();
+            }
+            catch (COMException ex) when ((uint)ex.ErrorCode == 0x80040154)
+            {
+                throw new InvalidOperationException(
+                    "QuickBooks COM component is not registered on this machine (0x80040154). " +
+                    "Install the QuickBooks Desktop SDK (QBFC16), run this app as x86, and run it on a machine with QuickBooks Desktop installed.",
+                    ex);
+            }
+
+            var connectionOpened = false;
+            var sessionBegun = false;
+
             try
             {
                 sessionMgr.OpenConnection2("", "InvoiceImporter", ENConnectionType.ctLocalQBD);
+                connectionOpened = true;
                 sessionMgr.BeginSession("", ENOpenMode.omDontCare);
+                sessionBegun = true;
 
                 var msgSet = sessionMgr.CreateMsgSetRequest("US", 16, 0);
                 msgSet.Attributes.OnError = ENRqOnError.roeContinue;
@@ -182,8 +200,11 @@ namespace QBD_Invoice
             }
             finally
             {
-                sessionMgr.EndSession();
-                sessionMgr.CloseConnection();
+                if (sessionBegun)
+                    sessionMgr.EndSession();
+
+                if (connectionOpened)
+                    sessionMgr.CloseConnection();
             }
         }
     }
