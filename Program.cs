@@ -64,8 +64,12 @@ namespace QBD_Invoice
         {
             try
             {
+                Console.WriteLine("Loading invoice header and line data from CSV files...");
                 var headers = ReadInvoiceHeaders("InvoiceHeader.csv");
                 var lines = ReadInvoiceLines("InvoiceLines.csv");
+
+                Console.WriteLine($"Loaded {headers.Count} invoice headers and {lines.Count} invoice lines.");
+                Console.WriteLine("Starting QuickBooks invoice import. This may take a while for large batches...");
                 PushInvoicesToQuickBooks(headers, lines);
             }
             catch (Exception ex)
@@ -138,9 +142,9 @@ namespace QBD_Invoice
                         if (!string.IsNullOrWhiteSpace(ln.Desc))
                             lineAdd.Desc.SetValue(ln.Desc);
 
-                        // If this is your percent-based item ("OOP"), send Rate as PERCENTTYPE via RatePercent.
+                        // If this is your percent-based item ("Out-of-Pocket Expense"), send Rate as PERCENTTYPE via RatePercent.
                         // NOTE: PERCENTTYPE is expressed like "5" for 5% (not 0.05).
-                        bool isOop = string.Equals(ln.ItemRef, "OOP", StringComparison.OrdinalIgnoreCase);
+                        bool isOop = string.Equals(ln.ItemRef, "Out-of-Pocket Expense", StringComparison.OrdinalIgnoreCase);
 
                         // Only send Quantity if CSV cell had a value AND the line is not a percent-based line.
                         // (Percent discount-style lines typically do not use Quantity.)
@@ -167,7 +171,9 @@ namespace QBD_Invoice
                     }
                 }
 
+                Console.WriteLine("Processing invoice requests in QuickBooks...");
                 var respSet = sessionMgr.DoRequests(msgSet);
+                Console.WriteLine("QuickBooks processing complete. Reading response details...");
                 var errorLog = new List<string>();
 
                 for (int i = 0; i < respSet.ResponseList.Count; i++)
