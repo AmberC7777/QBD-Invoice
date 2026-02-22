@@ -38,10 +38,10 @@ Required columns (header row must match property names):
 | `ItemRef` | string | QuickBooks item full name. |
 | `Desc` | string | Optional description. |
 | `Quantity` | decimal | Optional; ignored for percent-based items. |
-| `Rate` | decimal | Optional; sent as `RatePercent` when `ItemRef` is `OOP`. |
+| `Rate` | decimal | Optional; sent as `RatePercent` when `ItemRef` is `Out-of-Pocket Expense`. |
 | `Amount` | decimal | Optional; currently not mapped. |
 
-> **Note**: When `ItemRef` equals `OOP` (case-insensitive), the `Rate` column is sent as a percent (e.g., `5` for 5%) rather than a standard rate.
+> **Note**: When `ItemRef` equals `Out-of-Pocket Expense` (case-insensitive), the `Rate` column is sent as a percent (e.g., `5` for 5%) rather than a standard rate.
 
 ## Build and Run
 
